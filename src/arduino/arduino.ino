@@ -78,6 +78,8 @@ void loop() {
 
     }
 
+    Serial.println(distance_in_cm);
+
     if (distance_in_cm < close_distance) {
         for (int i = 0; i < 4; i++) {
             digitalWrite(BUZZER_PIN, HIGH);

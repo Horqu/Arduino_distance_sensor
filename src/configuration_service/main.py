@@ -1,25 +1,41 @@
 import wx
 import wx.lib.intctrl
-# import serial
+import serial
 import threading
-import time
 import datetime
 
 logs = [] 
-# ser = serial.Serial('COM15', 9600)
-# time.sleep(2)
+ser = serial.Serial('COM3', 9600)
 
+def get_timestamp_no_space():
+    return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")[:-3]
+
+log_parking = False
+parking_iteration = 1
+log_file_date = get_timestamp_no_space()
+log_file_name = "logs_" + log_file_date + ".txt"
 last_close_distance_value = 0
 last_far_distance_value = 0
 
 def get_timestamp():
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")[:-3]
 
+def start_parking(event):
+    global log_parking
+    log_parking = True
+
+def stop_parking(event):
+    global log_parking
+    global parking_iteration
+    if log_parking:
+        log_parking = False
+        parking_iteration += 1
+
 def read_from_arduino():
     while True:
-        if ser.in_waiting:
+        if ser.in_waiting and log_parking:
             line = ser.readline().decode('utf-8').rstrip()
-            logs.append(f"[{get_timestamp()}] Distance: {line}")
+            logs.append(f"[{get_timestamp()}] Distance: {line}, Parking no. {parking_iteration}")
             wx.CallAfter(update_logs)
 
 def send_config(event):
@@ -54,7 +70,7 @@ def update_logs():
     log_text = "\n".join(logs)
     log_window.SetValue(log_text)
     log_window.ShowPosition(log_window.GetLastPosition())
-    with open("logs.txt", "w") as file:
+    with open(log_file_name, "w") as file:
         file.write(log_text)
 
 
@@ -78,10 +94,18 @@ grid.Add(label_2, pos=(2, 0), flag=wx.ALIGN_CENTER_VERTICAL)
 input_2 = wx.lib.intctrl.IntCtrl(panel, size=(200, -1))
 grid.Add(input_2, pos=(2, 1), flag=wx.EXPAND)
 
-# button do wysylania koncfiguracji
+# button do wysylania konfiguracji
 button = wx.Button(panel, label="Send")
 button.Bind(wx.EVT_BUTTON, send_config)
 grid.Add(button, pos=(3, 0), span=(1, 2), flag=wx.EXPAND)
+
+button_start_parking = wx.Button(panel, label="Start parking")
+button_start_parking.Bind(wx.EVT_BUTTON, start_parking)
+grid.Add(button_start_parking, pos=(4, 0), span=(0, 2), flag=wx.EXPAND)
+
+button_stop_parking = wx.Button(panel, label="Finish parking")
+button_stop_parking.Bind(wx.EVT_BUTTON, stop_parking)
+grid.Add(button_stop_parking, pos=(5, 0), span=(0, 2), flag=wx.EXPAND)
 
 # Okno logów
 main_sizer.Add(grid, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL)

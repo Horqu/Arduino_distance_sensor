@@ -5,6 +5,7 @@
 ### Software:
 - Python 3.12.0 with libraries:
   - pyserial
+  - wxPython
 - Arduino IDE 2.2.1 with libraries:
   - LiquidCrystal
 
